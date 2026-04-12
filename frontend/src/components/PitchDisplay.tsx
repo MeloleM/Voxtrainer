@@ -139,131 +139,141 @@ export function PitchDisplay() {
     };
   }, []);
 
-  const centsColor =
+  const centsClass =
     Math.abs(currentCents) <= 10
-      ? "#4caf50"
+      ? "on-pitch"
       : Math.abs(currentCents) <= 25
-        ? "#ff9800"
-        : "#f44336";
+        ? "near-pitch"
+        : "off-pitch";
 
   return (
     <div className="pitch-display">
-      <div className="controls">
-        <button onClick={running ? stopMic : startMic}>
-          {running ? "Stop" : "Start Mic"}
-        </button>
-
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={showNoteLabels}
-            onChange={(e) => setShowNoteLabels(e.target.checked)}
-          />
-          Note labels
-        </label>
-
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={showHz}
-            onChange={(e) => setShowHz(e.target.checked)}
-          />
-          Hz
-        </label>
-
-        <span className="separator" />
-
-        <label className="range-select">
-          Low
-          <select
-            value={rangeLow}
-            onChange={(e) => handleRangeLow(Number(e.target.value))}
+      {/* ── Toolbar ── */}
+      <div className="toolbar">
+        <div className="toolbar-group">
+          <button
+            className="btn-primary"
+            onClick={running ? stopMic : startMic}
           >
-            {Array.from(
-              { length: VOCAL_RANGE.high - VOCAL_RANGE.low - 11 },
-              (_, i) => {
-                const midi = VOCAL_RANGE.low + i;
-                return (
-                  <option key={midi} value={midi}>
-                    {midiToNoteName(midi)}
-                  </option>
-                );
-              }
-            )}
-          </select>
-        </label>
+            {running ? "Stop" : "Start Mic"}
+          </button>
+        </div>
 
-        <label className="range-select">
-          High
-          <select
-            value={rangeHigh}
-            onChange={(e) => handleRangeHigh(Number(e.target.value))}
+        <div className="toolbar-separator" />
+
+        <div className="toolbar-group">
+          <button
+            className={`toggle-pill${showNoteLabels ? " active" : ""}`}
+            onClick={() => setShowNoteLabels(!showNoteLabels)}
           >
-            {Array.from(
-              { length: VOCAL_RANGE.high - VOCAL_RANGE.low - 11 },
-              (_, i) => {
-                const midi = VOCAL_RANGE.low + 12 + i;
-                return (
-                  <option key={midi} value={midi}>
-                    {midiToNoteName(midi)}
-                  </option>
-                );
-              }
-            )}
-          </select>
-        </label>
-
-        <span className="separator" />
-
-        <label className="range-select">
-          Scale
-          <select
-            value={scaleName}
-            onChange={(e) => setScaleName(e.target.value)}
+            Notes
+          </button>
+          <button
+            className={`toggle-pill${showHz ? " active" : ""}`}
+            onClick={() => setShowHz(!showHz)}
           >
-            {SCALE_NAMES.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
+            Hz
+          </button>
+        </div>
 
-        {scaleName !== "Chromatic" && (
-          <label className="range-select">
-            Root
+        <div className="toolbar-separator" />
+
+        <div className="toolbar-group">
+          <label className="pill-select">
+            <span>Low</span>
             <select
-              value={rootNote}
-              onChange={(e) => setRootNote(Number(e.target.value))}
+              value={rangeLow}
+              onChange={(e) => handleRangeLow(Number(e.target.value))}
             >
-              {NOTE_NAMES.map((name, i) => (
-                <option key={i} value={i}>
+              {Array.from(
+                { length: VOCAL_RANGE.high - VOCAL_RANGE.low - 11 },
+                (_, i) => {
+                  const midi = VOCAL_RANGE.low + i;
+                  return (
+                    <option key={midi} value={midi}>
+                      {midiToNoteName(midi)}
+                    </option>
+                  );
+                }
+              )}
+            </select>
+          </label>
+
+          <label className="pill-select">
+            <span>High</span>
+            <select
+              value={rangeHigh}
+              onChange={(e) => handleRangeHigh(Number(e.target.value))}
+            >
+              {Array.from(
+                { length: VOCAL_RANGE.high - VOCAL_RANGE.low - 11 },
+                (_, i) => {
+                  const midi = VOCAL_RANGE.low + 12 + i;
+                  return (
+                    <option key={midi} value={midi}>
+                      {midiToNoteName(midi)}
+                    </option>
+                  );
+                }
+              )}
+            </select>
+          </label>
+        </div>
+
+        <div className="toolbar-separator" />
+
+        <div className="toolbar-group">
+          <label className="pill-select">
+            <span>Scale</span>
+            <select
+              value={scaleName}
+              onChange={(e) => setScaleName(e.target.value)}
+            >
+              {SCALE_NAMES.map((name) => (
+                <option key={name} value={name}>
                   {name}
                 </option>
               ))}
             </select>
           </label>
-        )}
-      </div>
 
-      <div className="canvas-wrapper">
-        <canvas ref={canvasRef} />
-      </div>
-
-      {running && (
-        <div className="pitch-readout">
-          <span className="note">{currentNote || "—"}</span>
-          {currentNote && (
-            <>
-              <span className="hz">{currentHz}</span>
-              <span className="cents" style={{ color: centsColor }}>
-                {currentCents > 0 ? "+" : ""}
-                {currentCents} cents
-              </span>
-            </>
+          {scaleName !== "Chromatic" && (
+            <label className="pill-select">
+              <span>Root</span>
+              <select
+                value={rootNote}
+                onChange={(e) => setRootNote(Number(e.target.value))}
+              >
+                {NOTE_NAMES.map((name, i) => (
+                  <option key={i} value={i}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
         </div>
-      )}
+      </div>
+
+      {/* ── Canvas + Readout row ── */}
+      <div className="canvas-row">
+        <div className="canvas-viewport">
+          <canvas ref={canvasRef} />
+        </div>
+
+        <div className="pitch-readout">
+          <span className="readout-note">{currentNote || "—"}</span>
+          <span className="readout-hz">{currentHz || "\u00A0"}</span>
+          {currentNote ? (
+            <span className={`readout-cents ${centsClass}`}>
+              {currentCents > 0 ? "+" : ""}
+              {currentCents}c
+            </span>
+          ) : (
+            <span className="readout-cents">&nbsp;</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

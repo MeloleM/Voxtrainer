@@ -86,7 +86,7 @@ export class PitchVisualizer {
     }
 
     // Clear
-    ctx.fillStyle = "#1a1a2e";
+    ctx.fillStyle = "#121212";
     ctx.fillRect(0, 0, w, h);
 
     this.drawGrid(w, h);
@@ -137,8 +137,8 @@ export class PitchVisualizer {
 
       // Labels
       if (options.showNoteLabels || options.showHz) {
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
-        ctx.font = "11px monospace";
+        ctx.fillStyle = "rgba(179,179,179,0.7)";
+        ctx.font = '11px "JetBrains Mono", "Fira Code", monospace';
         let label = "";
         if (options.showNoteLabels) label += midiToNoteName(midi);
         if (options.showHz) {
@@ -154,11 +154,11 @@ export class PitchVisualizer {
     const { ctx, history } = this;
     if (history.length < 2) return;
 
-    ctx.strokeStyle = "#4fc3f7";
+    ctx.strokeStyle = "#1db4d7";
     ctx.lineWidth = 2.5;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    ctx.shadowColor = "#4fc3f7";
+    ctx.shadowColor = "#1db4d7";
     ctx.shadowBlur = 6;
 
     ctx.beginPath();
