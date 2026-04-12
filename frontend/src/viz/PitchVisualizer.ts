@@ -34,8 +34,8 @@ export class PitchVisualizer {
   private history: PitchPoint[] = [];
   private options: VisualizerOptions;
 
-  // Visible MIDI range (can be adjusted by diagnostic later)
-  private midiLow = 48; // C3
+  // Visible MIDI range — default spans C2 to C5 to cover deep voices
+  private midiLow = 36; // C2
   private midiHigh = 72; // C5
 
   constructor(canvas: HTMLCanvasElement, options?: Partial<VisualizerOptions>) {
@@ -49,8 +49,8 @@ export class PitchVisualizer {
   }
 
   setRange(lowMidi: number, highMidi: number): void {
-    this.midiLow = Math.max(VOCAL_RANGE.low, lowMidi - 4);
-    this.midiHigh = Math.min(VOCAL_RANGE.high, highMidi + 4);
+    this.midiLow = Math.max(VOCAL_RANGE.low, lowMidi);
+    this.midiHigh = Math.min(VOCAL_RANGE.high, highMidi);
   }
 
   pushPitch(frequency: number): void {
@@ -107,7 +107,7 @@ export class PitchVisualizer {
       const isNatural = [0, 2, 4, 5, 7, 9, 11].includes(noteIndex);
 
       // Grid line
-      ctx.strokeStyle = isC ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.07)";
+      ctx.strokeStyle = isC ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)";
       ctx.lineWidth = isC ? 1.5 : 0.5;
       ctx.beginPath();
       ctx.moveTo(0, y);

@@ -15,7 +15,7 @@ export class PitchDetector {
   private buffer: Float32Array<ArrayBuffer>;
   private clarityThreshold: number;
 
-  constructor(analyser: AnalyserNode, clarityThreshold = 0.9) {
+  constructor(analyser: AnalyserNode, clarityThreshold = 0.85) {
     const bufferSize = analyser.fftSize;
     this.buffer = new Float32Array(bufferSize) as Float32Array<ArrayBuffer>;
     this.detector = Pitchy.forFloat32Array(bufferSize);
@@ -31,7 +31,7 @@ export class PitchDetector {
       const abs = Math.abs(this.buffer[i]);
       if (abs > maxAmplitude) maxAmplitude = abs;
     }
-    if (maxAmplitude < 0.01) return null;
+    if (maxAmplitude < 0.005) return null;
 
     const [frequency, clarity] = this.detector.findPitch(
       this.buffer,

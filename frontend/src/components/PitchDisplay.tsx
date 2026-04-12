@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { AudioEngine } from "../audio/AudioEngine";
 import { PitchDetector } from "../audio/PitchDetector";
 import { PitchVisualizer } from "../viz/PitchVisualizer";
-import { frequencyToMidi, midiToNoteName, centsOffPitch } from "../audio/noteUtils";
+import { frequencyToMidi, midiToNoteName, centsOffPitch, VOCAL_RANGE } from "../audio/noteUtils";
 
 export function PitchDisplay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,6 +20,10 @@ export function PitchDisplay() {
   // Settings
   const [showNoteLabels, setShowNoteLabels] = useState(false);
   const [showHz, setShowHz] = useState(false);
+
+  // Range (MIDI note numbers) — must span at least 12 semitones (1 octave)
+  const [rangeLow, setRangeLow] = useState(36); // C2
+  const [rangeHigh, setRangeHigh] = useState(72); // C5
 
   const tick = useCallback(() => {
     const analyser = analyserRef.current;
@@ -68,11 +72,12 @@ export function PitchDisplay() {
     canvas.height = rect.height;
 
     const viz = new PitchVisualizer(canvas, { showNoteLabels, showHz });
+    viz.setRange(rangeLow, rangeHigh);
     vizRef.current = viz;
 
     setRunning(true);
     rafRef.current = requestAnimationFrame(tick);
-  }, [running, showNoteLabels, showHz, tick]);
+  }, [running, showNoteLabels, showHz, rangeLow, rangeHigh, tick]);
 
   const stopMic = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -91,6 +96,22 @@ export function PitchDisplay() {
   useEffect(() => {
     vizRef.current?.setOptions({ showNoteLabels, showHz });
   }, [showNoteLabels, showHz]);
+
+  // Update range live
+  useEffect(() => {
+    vizRef.current?.setRange(rangeLow, rangeHigh);
+  }, [rangeLow, rangeHigh]);
+
+  const handleRangeLow = (midi: number) => {
+    setRangeLow(midi);
+    // Enforce minimum 1 octave span
+    if (rangeHigh - midi < 12) setRangeHigh(midi + 12);
+  };
+
+  const handleRangeHigh = (midi: number) => {
+    setRangeHigh(midi);
+    if (midi - rangeLow < 12) setRangeLow(midi - 12);
+  };
 
   // Cleanup on unmount
   useEffect(() => {
@@ -130,6 +151,48 @@ export function PitchDisplay() {
             onChange={(e) => setShowHz(e.target.checked)}
           />
           Hz
+        </label>
+
+        <span className="separator" />
+
+        <label className="range-select">
+          Low
+          <select
+            value={rangeLow}
+            onChange={(e) => handleRangeLow(Number(e.target.value))}
+          >
+            {Array.from(
+              { length: VOCAL_RANGE.high - VOCAL_RANGE.low - 11 },
+              (_, i) => {
+                const midi = VOCAL_RANGE.low + i;
+                return (
+                  <option key={midi} value={midi}>
+                    {midiToNoteName(midi)}
+                  </option>
+                );
+              }
+            )}
+          </select>
+        </label>
+
+        <label className="range-select">
+          High
+          <select
+            value={rangeHigh}
+            onChange={(e) => handleRangeHigh(Number(e.target.value))}
+          >
+            {Array.from(
+              { length: VOCAL_RANGE.high - VOCAL_RANGE.low - 11 },
+              (_, i) => {
+                const midi = VOCAL_RANGE.low + 12 + i;
+                return (
+                  <option key={midi} value={midi}>
+                    {midiToNoteName(midi)}
+                  </option>
+                );
+              }
+            )}
+          </select>
         </label>
       </div>
 
