@@ -95,8 +95,10 @@ Browser receives:
 ## MVP Feature Set
 
 ### Core Training (browser-only, no backend needed)
-- [ ] Audio input pipeline (Web Audio API + pitchy in AudioWorklet)
-- [ ] Scrolling pitch visualizer (Canvas — piano roll with target band + user pitch line)
+- [x] Audio input pipeline (Web Audio API + pitchy, fftSize 4096 for low-pitch accuracy)
+- [x] Scrolling pitch visualizer (Canvas — piano roll with user pitch trailing line, HiDPI)
+- [x] Settings: note labels toggle, Hz toggle, range selector (Low/High dropdowns, min 1 octave)
+- [x] Scale selector (Chromatic, Major, Natural Minor, Pentatonic Maj/Min, Blues + root note)
 - [ ] Vocal diagnostic (range test + pitch accuracy assessment)
 - [ ] Breath trainer (volume/sustain consistency display)
 - [ ] Glissando exercise (siren/slide to find target pitch visually)
@@ -178,6 +180,11 @@ songs/
 
 ## Open Questions
 - (none currently)
+
+## Changelog
+- **Phase 1 complete** — Audio foundation: mic capture, pitch detection (pitchy), scrolling canvas visualizer, note/Hz readout, cents deviation display.
+- **Phase 1 fix round 1** — Default range lowered to C2, range selectors added, grid line opacity increased, clarity threshold tuned (0.9→0.85, amplitude floor 0.01→0.005) to fix premature cutoff.
+- **Phase 1 fix round 2** — fftSize 2048→4096 for reliable low-pitch detection (down to A1). Scale selector with root note picker. HiDPI canvas rendering fixed. Canvas viewport increased to 65vh.
 
 ---
 
