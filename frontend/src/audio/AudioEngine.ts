@@ -21,7 +21,9 @@ export class AudioEngine {
     this.sourceNode = this.context.createMediaStreamSource(this.stream);
 
     this.analyserNode = this.context.createAnalyser();
-    this.analyserNode.fftSize = 2048;
+    // 4096 gives ~93ms at 44.1kHz — enough cycles for reliable
+    // autocorrelation down to C2 (65 Hz, ~15ms period ≈ 6 cycles)
+    this.analyserNode.fftSize = 4096;
 
     this.sourceNode.connect(this.analyserNode);
 

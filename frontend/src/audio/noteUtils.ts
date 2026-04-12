@@ -3,7 +3,7 @@
  * All based on A4 = 440 Hz, 12-TET.
  */
 
-const NOTE_NAMES = [
+export const NOTE_NAMES = [
   "C",
   "C#",
   "D",
@@ -48,3 +48,24 @@ export const VOCAL_RANGE = {
   low: 36, // C2
   high: 84, // C6
 } as const;
+
+/**
+ * Scale definitions as semitone offsets from the root (0-11).
+ * Used to filter which grid lines are drawn.
+ */
+export const SCALES: Record<string, number[]> = {
+  "Chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  "Major": [0, 2, 4, 5, 7, 9, 11],
+  "Natural Minor": [0, 2, 3, 5, 7, 8, 10],
+  "Pentatonic Major": [0, 2, 4, 7, 9],
+  "Pentatonic Minor": [0, 3, 5, 7, 10],
+  "Blues": [0, 3, 5, 6, 7, 10],
+} as const;
+
+export const SCALE_NAMES = Object.keys(SCALES);
+
+/** Check if a MIDI note belongs to a given scale with a given root. */
+export function isInScale(midi: number, rootNoteIndex: number, scaleIntervals: number[]): boolean {
+  const semitone = ((midi - rootNoteIndex) % 12 + 12) % 12;
+  return scaleIntervals.includes(semitone);
+}

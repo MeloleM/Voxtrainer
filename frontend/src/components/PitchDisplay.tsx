@@ -2,7 +2,15 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { AudioEngine } from "../audio/AudioEngine";
 import { PitchDetector } from "../audio/PitchDetector";
 import { PitchVisualizer } from "../viz/PitchVisualizer";
-import { frequencyToMidi, midiToNoteName, centsOffPitch, VOCAL_RANGE } from "../audio/noteUtils";
+import {
+  frequencyToMidi,
+  midiToNoteName,
+  centsOffPitch,
+  VOCAL_RANGE,
+  SCALES,
+  SCALE_NAMES,
+  NOTE_NAMES,
+} from "../audio/noteUtils";
 
 export function PitchDisplay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,6 +32,10 @@ export function PitchDisplay() {
   // Range (MIDI note numbers) — must span at least 12 semitones (1 octave)
   const [rangeLow, setRangeLow] = useState(36); // C2
   const [rangeHigh, setRangeHigh] = useState(72); // C5
+
+  // Scale
+  const [scaleName, setScaleName] = useState("Chromatic");
+  const [rootNote, setRootNote] = useState(0); // 0 = C
 
   const tick = useCallback(() => {
     const analyser = analyserRef.current;
@@ -54,30 +66,35 @@ export function PitchDisplay() {
 
     const engine = new AudioEngine();
     const analyser = await engine.start();
-    const detector = new PitchDetector(analyser, 0.9);
+    const detector = new PitchDetector(analyser, 0.85);
 
     engineRef.current = engine;
     analyserRef.current = analyser;
     detectorRef.current = detector;
 
     const canvas = canvasRef.current!;
-    // Match canvas internal resolution to display size
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
+    const dpr = window.devicePixelRatio || 1;
+    // Set canvas buffer to full native resolution
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
     const ctx = canvas.getContext("2d")!;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    // Reset canvas dimensions to CSS size for drawing math
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    // Scale all drawing ops so we work in CSS-pixel coordinates
+    ctx.scale(dpr, dpr);
 
-    const viz = new PitchVisualizer(canvas, { showNoteLabels, showHz });
+    const scaleIntervals = scaleName === "Chromatic" ? null : SCALES[scaleName];
+    const viz = new PitchVisualizer(canvas, {
+      showNoteLabels,
+      showHz,
+      scaleIntervals,
+      rootNote,
+    });
     viz.setRange(rangeLow, rangeHigh);
     vizRef.current = viz;
 
     setRunning(true);
     rafRef.current = requestAnimationFrame(tick);
-  }, [running, showNoteLabels, showHz, rangeLow, rangeHigh, tick]);
+  }, [running, showNoteLabels, showHz, rangeLow, rangeHigh, scaleName, rootNote, tick]);
 
   const stopMic = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -94,8 +111,9 @@ export function PitchDisplay() {
 
   // Update visualizer options live
   useEffect(() => {
-    vizRef.current?.setOptions({ showNoteLabels, showHz });
-  }, [showNoteLabels, showHz]);
+    const scaleIntervals = scaleName === "Chromatic" ? null : SCALES[scaleName];
+    vizRef.current?.setOptions({ showNoteLabels, showHz, scaleIntervals, rootNote });
+  }, [showNoteLabels, showHz, scaleName, rootNote]);
 
   // Update range live
   useEffect(() => {
@@ -194,6 +212,38 @@ export function PitchDisplay() {
             )}
           </select>
         </label>
+
+        <span className="separator" />
+
+        <label className="range-select">
+          Scale
+          <select
+            value={scaleName}
+            onChange={(e) => setScaleName(e.target.value)}
+          >
+            {SCALE_NAMES.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {scaleName !== "Chromatic" && (
+          <label className="range-select">
+            Root
+            <select
+              value={rootNote}
+              onChange={(e) => setRootNote(Number(e.target.value))}
+            >
+              {NOTE_NAMES.map((name, i) => (
+                <option key={i} value={i}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       <div className="canvas-wrapper">

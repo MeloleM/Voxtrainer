@@ -2,6 +2,7 @@ import {
   frequencyToMidi,
   midiToNoteName,
   midiToFrequency,
+  isInScale,
   VOCAL_RANGE,
 } from "../audio/noteUtils";
 
@@ -15,12 +16,18 @@ export interface VisualizerOptions {
   showHz: boolean;
   /** How many seconds of history to display */
   timeWindow: number;
+  /** Scale intervals (semitone offsets from root). null = chromatic (show all). */
+  scaleIntervals: number[] | null;
+  /** Root note index (0=C, 1=C#, ... 11=B). Only used when scaleIntervals is set. */
+  rootNote: number;
 }
 
 const DEFAULT_OPTIONS: VisualizerOptions = {
   showNoteLabels: false,
   showHz: false,
   timeWindow: 4,
+  scaleIntervals: null,
+  rootNote: 0,
 };
 
 /**
@@ -65,8 +72,10 @@ export class PitchVisualizer {
 
   draw(): void {
     const { canvas, ctx, options } = this;
-    const w = canvas.width;
-    const h = canvas.height;
+    // Use CSS dimensions (not canvas.width/height which includes DPR scaling)
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
     const now = performance.now();
     const windowMs = options.timeWindow * 1000;
 
@@ -99,24 +108,36 @@ export class PitchVisualizer {
 
   private drawGrid(w: number, h: number): void {
     const { ctx, options } = this;
+    const hasScale = options.scaleIntervals && options.scaleIntervals.length < 12;
 
     for (let midi = Math.ceil(this.midiLow); midi <= Math.floor(this.midiHigh); midi++) {
       const y = this.midiToY(midi, h);
       const noteIndex = ((midi % 12) + 12) % 12;
       const isC = noteIndex === 0;
-      const isNatural = [0, 2, 4, 5, 7, 9, 11].includes(noteIndex);
+      const inScale = !hasScale || isInScale(midi, options.rootNote, options.scaleIntervals!);
 
-      // Grid line
-      ctx.strokeStyle = isC ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)";
+      if (hasScale && !inScale) {
+        // Out-of-scale notes: very faint line only, no label
+        ctx.strokeStyle = "rgba(255,255,255,0.04)";
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+        continue;
+      }
+
+      // In-scale (or chromatic) grid line
+      ctx.strokeStyle = isC ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.18)";
       ctx.lineWidth = isC ? 1.5 : 0.5;
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(w, y);
       ctx.stroke();
 
-      // Labels (only on natural notes to avoid clutter)
-      if (isNatural && (options.showNoteLabels || options.showHz)) {
-        ctx.fillStyle = "rgba(255,255,255,0.4)";
+      // Labels
+      if (options.showNoteLabels || options.showHz) {
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
         ctx.font = "11px monospace";
         let label = "";
         if (options.showNoteLabels) label += midiToNoteName(midi);
