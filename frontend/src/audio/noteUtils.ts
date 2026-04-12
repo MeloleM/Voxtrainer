@@ -36,8 +36,15 @@ export function midiToNoteName(midi: number): string {
   return `${NOTE_NAMES[noteIndex]}${octave}`;
 }
 
-/** Get deviation in cents from the nearest semitone. */
-export function centsOffPitch(freq: number): number {
+/**
+ * Get deviation in cents.
+ * With one arg: deviation from nearest semitone.
+ * With two args: deviation from a specific reference frequency.
+ */
+export function centsOffPitch(freq: number, referenceFreq?: number): number {
+  if (referenceFreq !== undefined) {
+    return 1200 * Math.log2(freq / referenceFreq);
+  }
   const midi = frequencyToMidi(freq);
   const nearestMidi = Math.round(midi);
   return (midi - nearestMidi) * 100;

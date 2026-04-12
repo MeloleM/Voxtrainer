@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { AudioEngine } from "../audio/AudioEngine";
 import { PitchDetector } from "../audio/PitchDetector";
 import { PitchVisualizer } from "../viz/PitchVisualizer";
+import { ExerciseEngine, type ExerciseState } from "../exercises/ExerciseEngine";
+import { ExercisePanel } from "./ExercisePanel";
 import {
   frequencyToMidi,
   midiToNoteName,
@@ -19,6 +21,8 @@ export function PitchDisplay() {
   const vizRef = useRef<PitchVisualizer | null>(null);
   const rafRef = useRef<number>(0);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const exerciseRef = useRef<ExerciseEngine | null>(null);
+  const lastFreqRef = useRef<number | null>(null);
 
   const [running, setRunning] = useState(false);
   const [currentNote, setCurrentNote] = useState<string>("");
@@ -37,6 +41,10 @@ export function PitchDisplay() {
   const [scaleName, setScaleName] = useState("Chromatic");
   const [rootNote, setRootNote] = useState(0); // 0 = C
 
+  // Exercise state
+  const [exerciseActive, setExerciseActive] = useState(false);
+  const [exerciseState, setExerciseState] = useState<ExerciseState | null>(null);
+
   const tick = useCallback(() => {
     const analyser = analyserRef.current;
     const detector = detectorRef.current;
@@ -46,16 +54,25 @@ export function PitchDisplay() {
     const result = detector.detect(analyser);
     if (result) {
       viz.pushPitch(result.frequency);
+      lastFreqRef.current = result.frequency;
       const midi = frequencyToMidi(result.frequency);
       setCurrentNote(midiToNoteName(midi));
       setCurrentHz(`${result.frequency.toFixed(1)} Hz`);
       setCurrentCents(Math.round(centsOffPitch(result.frequency)));
     } else {
       viz.pushSilence();
+      lastFreqRef.current = null;
       setCurrentNote("");
       setCurrentHz("");
       setCurrentCents(0);
     }
+
+    // Feed exercise engine
+    exerciseRef.current?.tick(lastFreqRef.current);
+
+    // Update visualizer target from exercise
+    const target = exerciseRef.current?.getTargetNote() ?? null;
+    viz.setOptions({ targetNote: target });
 
     viz.draw();
     rafRef.current = requestAnimationFrame(tick);
@@ -75,11 +92,9 @@ export function PitchDisplay() {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    // Set canvas buffer to full native resolution
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     const ctx = canvas.getContext("2d")!;
-    // Scale all drawing ops so we work in CSS-pixel coordinates
     ctx.scale(dpr, dpr);
 
     const scaleIntervals = scaleName === "Chromatic" ? null : SCALES[scaleName];
@@ -98,6 +113,11 @@ export function PitchDisplay() {
 
   const stopMic = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
+    exerciseRef.current?.stop();
+    exerciseRef.current?.dispose();
+    exerciseRef.current = null;
+    setExerciseActive(false);
+    setExerciseState(null);
     engineRef.current?.stop();
     engineRef.current = null;
     analyserRef.current = null;
@@ -107,6 +127,28 @@ export function PitchDisplay() {
     setCurrentNote("");
     setCurrentHz("");
     setCurrentCents(0);
+  }, []);
+
+  const startExercise = useCallback(() => {
+    if (!running) return;
+
+    const ex = new ExerciseEngine(30, 3000);
+    ex.onStateChange((state) => setExerciseState({ ...state }));
+    exerciseRef.current = ex;
+    setExerciseActive(true);
+
+    const scaleIntervals = scaleName === "Chromatic" ? null : SCALES[scaleName];
+    ex.startNoteMatching(5, rangeLow, rangeHigh, scaleIntervals, rootNote);
+  }, [running, rangeLow, rangeHigh, scaleName, rootNote]);
+
+  const stopExercise = useCallback(() => {
+    exerciseRef.current?.stop();
+    exerciseRef.current?.dispose();
+    exerciseRef.current = null;
+    setExerciseActive(false);
+    setExerciseState(null);
+    // Clear target from visualizer
+    vizRef.current?.setOptions({ targetNote: null });
   }, []);
 
   // Update visualizer options live
@@ -122,7 +164,6 @@ export function PitchDisplay() {
 
   const handleRangeLow = (midi: number) => {
     setRangeLow(midi);
-    // Enforce minimum 1 octave span
     if (rangeHigh - midi < 12) setRangeHigh(midi + 12);
   };
 
@@ -136,6 +177,7 @@ export function PitchDisplay() {
     return () => {
       cancelAnimationFrame(rafRef.current);
       engineRef.current?.stop();
+      exerciseRef.current?.dispose();
     };
   }, []);
 
@@ -254,6 +296,16 @@ export function PitchDisplay() {
           )}
         </div>
       </div>
+
+      {/* ── Exercise Panel ── */}
+      {running && (
+        <ExercisePanel
+          exerciseActive={exerciseActive}
+          state={exerciseState}
+          onStart={startExercise}
+          onStop={stopExercise}
+        />
+      )}
 
       {/* ── Canvas + Readout row ── */}
       <div className="canvas-row">

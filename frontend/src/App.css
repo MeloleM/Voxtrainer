@@ -3,13 +3,12 @@
    =================================================================== */
 
 .app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px 24px;
+  width: 100%;
+  padding: 24px 40px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 /* ===================================================================
@@ -20,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 18px 32px;
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-medium);
@@ -29,12 +28,12 @@
 .app-header .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .app-header .logo {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   background: var(--accent);
   border-radius: 50%;
   display: flex;
@@ -43,20 +42,20 @@
 }
 
 .app-header .logo svg {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   fill: var(--bg-base);
 }
 
 .app-header h1 {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--text-primary);
 }
 
 .app-header .subtitle {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--text-muted);
   letter-spacing: 1.4px;
@@ -71,7 +70,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  width: 100%;
 }
 
 /* ===================================================================
@@ -82,14 +82,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  width: 100%;
 }
 
 .pitch-display .canvas-row {
   flex: 1;
   display: flex;
-  gap: 16px;
-  min-height: 65vh;
+  gap: 20px;
+  min-height: 70vh;
 }
 
 /* ===================================================================
@@ -99,8 +100,8 @@
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 12px;
+  padding: 14px 24px;
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-medium);
@@ -110,24 +111,24 @@
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .toolbar-separator {
   width: 1px;
-  height: 24px;
+  height: 32px;
   background: var(--border-subtle);
-  margin: 0 4px;
+  margin: 0 6px;
 }
 
 /* Pill button — primary */
 .btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 24px;
+  gap: 10px;
+  padding: 12px 36px;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.14px;
   color: var(--bg-base);
@@ -152,10 +153,10 @@
 .btn-secondary {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
+  gap: 8px;
+  padding: 10px 24px;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-elevated);
@@ -184,14 +185,14 @@
 .pill-select {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-secondary);
 }
 
 .pill-select span {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -199,9 +200,9 @@
 }
 
 .pill-select select {
-  padding: 5px 12px;
+  padding: 8px 18px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--text-primary);
   background: var(--bg-elevated);
@@ -212,10 +213,10 @@
   outline: none;
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
+  background-position: right 14px center;
 }
 
 .pill-select select:hover {
@@ -232,6 +233,7 @@
 
 .canvas-viewport {
   flex: 1;
+  min-width: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--bg-base);
@@ -254,9 +256,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 20px 24px;
-  min-width: 120px;
+  gap: 12px;
+  padding: 24px 32px;
+  width: 180px;
+  flex-shrink: 0;
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-medium);
@@ -264,7 +267,7 @@
 
 .readout-note {
   font-family: var(--font-sans);
-  font-size: 40px;
+  font-size: 56px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
@@ -272,13 +275,13 @@
 
 .readout-hz {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 18px;
   color: var(--text-muted);
 }
 
 .readout-cents {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 700;
 }
 
@@ -299,10 +302,10 @@
 .toggle-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  gap: 8px;
+  padding: 10px 22px;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--bg-elevated);
@@ -325,4 +328,100 @@
 
 .toggle-pill input {
   display: none;
+}
+
+/* ===================================================================
+   Exercise Panel
+   =================================================================== */
+
+.exercise-panel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-medium);
+  flex-wrap: wrap;
+}
+
+.exercise-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exercise-progress-text {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.exercise-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.exercise-message {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.exercise-message.phase-hold {
+  color: var(--color-warning);
+}
+
+.exercise-message.phase-success {
+  color: var(--color-success);
+}
+
+.exercise-message.phase-done {
+  color: var(--accent);
+}
+
+/* Hold progress bar */
+.hold-bar {
+  flex: 1;
+  max-width: 300px;
+  height: 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.hold-bar-fill {
+  height: 100%;
+  background: var(--color-success);
+  border-radius: var(--radius-pill);
+  transition: width 0.05s linear;
+}
+
+/* Score dots */
+.exercise-score {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.score-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.score-dot.great {
+  background: var(--color-success);
+}
+
+.score-dot.good {
+  background: var(--color-warning);
+}
+
+.score-dot.ok {
+  background: var(--color-error);
 }

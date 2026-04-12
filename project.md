@@ -227,46 +227,17 @@ songs/
 
 ---
 
-## CURRENT STATE — IN-PROGRESS REDESIGN
+## CURRENT STATE
 
-### What's done:
-- `index.css` — REWRITTEN with full design token system (CSS variables)
-- `App.css` — REWRITTEN with all new component classes (toolbar, pill buttons, toggle pills, pill selects, canvas viewport, pitch readout, header)
+Phase 1.5 (UI Redesign) is **COMPLETE**. All components redesigned with Spotify-adapted design system.
 
-### What still needs to be done to finish the redesign:
-1. **`App.tsx`** — needs new JSX structure:
-   - `.app-header` with `.brand` (logo circle + title) and `.subtitle`
-   - `.app-main` wrapping `<PitchDisplay />`
-2. **`PitchDisplay.tsx`** — needs new JSX to use new CSS classes:
-   - Replace `.controls` div with `.toolbar` using `.toolbar-group` and `.toolbar-separator`
-   - Start/Stop button → `.btn-primary`
-   - Note labels / Hz toggles → `.toggle-pill` (not checkboxes)
-   - Range selects → `.pill-select` with `<span>` label
-   - Scale/Root selects → `.pill-select`
-   - Canvas wrapper → `.canvas-viewport`
-   - Pitch readout → `.pitch-readout` with `.readout-note`, `.readout-detail`, `.readout-hz`, `.readout-cents` (classes: `.on-pitch`, `.near-pitch`, `.off-pitch`)
-3. **`PitchVisualizer.ts`** — update canvas background color from `#1a1a2e` to `#121212` (match `--bg-base`), update pitch line color from `#4fc3f7` to `#1db4d7` (match `--accent`), update grid line label color to match new text tokens.
-4. **Build, test, commit, push.**
-
-### CSS class reference for the redesign (all defined in App.css):
-- `.app` — root layout container
-- `.app-header` — top bar (surface bg, rounded, shadow)
-- `.app-header .brand` — logo + title group
-- `.app-header .logo` — 32px accent circle
-- `.app-main` — main content area
-- `.toolbar` — controls bar (surface bg, rounded, shadow)
-- `.toolbar-group` — flex group within toolbar
-- `.toolbar-separator` — vertical divider line
-- `.btn-primary` — accent pill button (Start Mic)
-- `.btn-secondary` — dark pill button
-- `.toggle-pill` — replaces checkbox toggles, `.active` class when on
-- `.pill-select` — label + styled select dropdown
-- `.canvas-viewport` — canvas container (65vh, rounded, shadow)
-- `.pitch-readout` — bottom readout bar
-- `.readout-note` — big note name
-- `.readout-detail` — hz + cents stack
-- `.readout-hz` — frequency display
-- `.readout-cents` — cents display (add `.on-pitch`/`.near-pitch`/`.off-pitch`)
+### Recent polish (post-redesign):
+- Pitch readout moved to right sidebar (fixed 180px width, no layout shift on sharps/flats)
+- Full-width layout (no max-width, fills viewport with 40px padding)
+- All UI elements scaled ~50% larger for 2K monitors
+- EMA pitch smoothing (alpha 0.55, bypassed on jumps >2 semitones)
+- Quadratic Bezier curve rendering for smooth pitch lines
+- Yellow highlight on closest in-scale note line with 25ms fade in/out
 
 ---
 
@@ -281,10 +252,10 @@ songs/
 - Settings: note labels, Hz, range (Low/High), scale + root
 - Tested by melo: works well, picks up down to A1, no noise, vibrato detected
 
-### Phase 1.5: UI Redesign 🔄 IN PROGRESS
-- Spotify-inspired design system adapted (see above)
-- index.css and App.css rewritten
-- **STILL NEED**: Update App.tsx JSX, PitchDisplay.tsx JSX, PitchVisualizer.ts colors
+### Phase 1.5: UI Redesign ✅ COMPLETE
+- Spotify-inspired design system adapted with full CSS token system
+- All components rewritten: App.tsx, PitchDisplay.tsx, PitchVisualizer.ts
+- Full-width layout, 50% larger UI, right-side readout, smooth pitch curves, note highlight
 
 ### Phase 2: Exercise Engine (NEXT)
 1. Tone generator (sine wave, piano option in settings)

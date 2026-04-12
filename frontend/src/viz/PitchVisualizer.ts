@@ -11,6 +11,11 @@ export interface PitchPoint {
   time: number; // timestamp (ms)
 }
 
+export interface TargetNote {
+  midi: number;           // integer MIDI note to match
+  toleranceCents: number; // e.g. 30 for beginner
+}
+
 export interface VisualizerOptions {
   showNoteLabels: boolean;
   showHz: boolean;
@@ -20,6 +25,8 @@ export interface VisualizerOptions {
   scaleIntervals: number[] | null;
   /** Root note index (0=C, 1=C#, ... 11=B). Only used when scaleIntervals is set. */
   rootNote: number;
+  /** Target note for exercises. null = free play. */
+  targetNote: TargetNote | null;
 }
 
 const DEFAULT_OPTIONS: VisualizerOptions = {
@@ -28,6 +35,7 @@ const DEFAULT_OPTIONS: VisualizerOptions = {
   timeWindow: 4,
   scaleIntervals: null,
   rootNote: 0,
+  targetNote: null,
 };
 
 /**
@@ -40,6 +48,17 @@ export class PitchVisualizer {
   private ctx: CanvasRenderingContext2D;
   private history: PitchPoint[] = [];
   private options: VisualizerOptions;
+  private lastSmoothedMidi = NaN;
+
+  // Subtle EMA — only smooths small jitter, skips jumps > 2 semitones
+  private readonly smoothAlpha = 0.55;
+  private readonly smoothMaxJump = 2;
+
+  // Active note highlight with fade
+  private highlightMidi = -1;
+  private highlightOpacity = 0;
+  private lastHighlightTime = 0;
+  private readonly highlightFadeMs = 25;
 
   // Visible MIDI range — default spans C2 to C5 to cover deep voices
   private midiLow = 36; // C2
@@ -61,12 +80,20 @@ export class PitchVisualizer {
   }
 
   pushPitch(frequency: number): void {
-    const midi = frequencyToMidi(frequency);
+    const rawMidi = frequencyToMidi(frequency);
+    // Subtle EMA — only smooth small jitter, skip on large jumps
+    let midi: number;
+    if (isNaN(this.lastSmoothedMidi) || Math.abs(rawMidi - this.lastSmoothedMidi) > this.smoothMaxJump) {
+      midi = rawMidi;
+    } else {
+      midi = this.lastSmoothedMidi + this.smoothAlpha * (rawMidi - this.lastSmoothedMidi);
+    }
+    this.lastSmoothedMidi = midi;
     this.history.push({ midi, time: performance.now() });
   }
 
   pushSilence(): void {
-    // Gap marker — we push NaN so the line breaks
+    this.lastSmoothedMidi = NaN;
     this.history.push({ midi: NaN, time: performance.now() });
   }
 
@@ -89,7 +116,11 @@ export class PitchVisualizer {
     ctx.fillStyle = "#121212";
     ctx.fillRect(0, 0, w, h);
 
+    // Determine closest in-scale note for highlight
+    this.updateHighlight(now);
+
     this.drawGrid(w, h);
+    this.drawTargetBand(w, h);
     this.drawPitchLine(w, h, now, windowMs);
   }
 
@@ -106,6 +137,40 @@ export class PitchVisualizer {
     return w - (age / windowMs) * w;
   }
 
+  private updateHighlight(now: number): void {
+    // Find the current pitch (last non-NaN)
+    const last = this.history.length > 0 ? this.history[this.history.length - 1] : null;
+    let targetMidi = -1;
+
+    if (last && !isNaN(last.midi)) {
+      const rounded = Math.round(last.midi);
+      const { scaleIntervals, rootNote } = this.options;
+      const hasScale = scaleIntervals && scaleIntervals.length < 12;
+      // Only highlight if the note is in the visible range and in scale
+      if (rounded >= this.midiLow && rounded <= this.midiHigh) {
+        if (!hasScale || isInScale(rounded, rootNote, scaleIntervals!)) {
+          targetMidi = rounded;
+        }
+      }
+    }
+
+    if (targetMidi !== this.highlightMidi) {
+      this.highlightMidi = targetMidi;
+      this.lastHighlightTime = now;
+    }
+
+    // Compute opacity with fade
+    if (this.highlightMidi === -1) {
+      // Fade out
+      const elapsed = now - this.lastHighlightTime;
+      this.highlightOpacity = Math.max(0, 1 - elapsed / this.highlightFadeMs);
+    } else {
+      // Fade in
+      const elapsed = now - this.lastHighlightTime;
+      this.highlightOpacity = Math.min(1, elapsed / this.highlightFadeMs);
+    }
+  }
+
   private drawGrid(w: number, h: number): void {
     const { ctx, options } = this;
     const hasScale = options.scaleIntervals && options.scaleIntervals.length < 12;
@@ -115,9 +180,9 @@ export class PitchVisualizer {
       const noteIndex = ((midi % 12) + 12) % 12;
       const isC = noteIndex === 0;
       const inScale = !hasScale || isInScale(midi, options.rootNote, options.scaleIntervals!);
+      const isHighlighted = midi === this.highlightMidi && this.highlightOpacity > 0;
 
       if (hasScale && !inScale) {
-        // Out-of-scale notes: very faint line only, no label
         ctx.strokeStyle = "rgba(255,255,255,0.04)";
         ctx.lineWidth = 0.5;
         ctx.beginPath();
@@ -127,9 +192,16 @@ export class PitchVisualizer {
         continue;
       }
 
-      // In-scale (or chromatic) grid line
-      ctx.strokeStyle = isC ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.18)";
-      ctx.lineWidth = isC ? 1.5 : 0.5;
+      if (isHighlighted) {
+        // Yellow highlight with fade opacity
+        const a = this.highlightOpacity * 0.6;
+        ctx.strokeStyle = `rgba(255,214,10,${a})`;
+        ctx.lineWidth = 2;
+      } else {
+        ctx.strokeStyle = isC ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.18)";
+        ctx.lineWidth = isC ? 1.5 : 0.5;
+      }
+
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(w, y);
@@ -137,8 +209,13 @@ export class PitchVisualizer {
 
       // Labels
       if (options.showNoteLabels || options.showHz) {
-        ctx.fillStyle = "rgba(179,179,179,0.7)";
-        ctx.font = '11px "JetBrains Mono", "Fira Code", monospace';
+        if (isHighlighted) {
+          const a = this.highlightOpacity * 0.9;
+          ctx.fillStyle = `rgba(255,214,10,${a})`;
+        } else {
+          ctx.fillStyle = "rgba(179,179,179,0.7)";
+        }
+        ctx.font = '16px "JetBrains Mono", "Fira Code", monospace';
         let label = "";
         if (options.showNoteLabels) label += midiToNoteName(midi);
         if (options.showHz) {
@@ -148,6 +225,47 @@ export class PitchVisualizer {
         ctx.fillText(label, 4, y - 3);
       }
     }
+  }
+
+  private drawTargetBand(w: number, h: number): void {
+    const { ctx, options } = this;
+    const target = options.targetNote;
+    if (!target) return;
+
+    const centerY = this.midiToY(target.midi, h);
+    // Convert cents tolerance to MIDI fraction (100 cents = 1 semitone)
+    const toleranceMidi = target.toleranceCents / 100;
+    const topY = this.midiToY(target.midi + toleranceMidi, h);
+    const bottomY = this.midiToY(target.midi - toleranceMidi, h);
+    const bandHeight = bottomY - topY;
+
+    // Outer tolerance band — subtle green zone
+    ctx.fillStyle = "rgba(30, 215, 96, 0.08)";
+    ctx.fillRect(0, topY, w, bandHeight);
+
+    // Inner ±5 cents "perfect" zone — brighter
+    const perfectMidi = 5 / 100;
+    const perfectTop = this.midiToY(target.midi + perfectMidi, h);
+    const perfectBottom = this.midiToY(target.midi - perfectMidi, h);
+    ctx.fillStyle = "rgba(30, 215, 96, 0.15)";
+    ctx.fillRect(0, perfectTop, w, perfectBottom - perfectTop);
+
+    // Center line — the exact target note
+    ctx.strokeStyle = "rgba(30, 215, 96, 0.5)";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(w, centerY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Target label on right side
+    ctx.fillStyle = "rgba(30, 215, 96, 0.8)";
+    ctx.font = 'bold 18px "JetBrains Mono", "Fira Code", monospace';
+    ctx.textAlign = "right";
+    ctx.fillText(midiToNoteName(target.midi), w - 12, centerY - 8);
+    ctx.textAlign = "left";
   }
 
   private drawPitchLine(w: number, h: number, now: number, windowMs: number): void {
@@ -161,37 +279,59 @@ export class PitchVisualizer {
     ctx.shadowColor = "#1db4d7";
     ctx.shadowBlur = 6;
 
-    ctx.beginPath();
-    let drawing = false;
+    // Build segments (runs of non-NaN points separated by silence)
+    const segments: { x: number; y: number }[][] = [];
+    let current: { x: number; y: number }[] = [];
 
     for (let i = 0; i < history.length; i++) {
       const p = history[i];
       if (isNaN(p.midi)) {
-        // Silence gap — break the line
-        drawing = false;
+        if (current.length > 0) {
+          segments.push(current);
+          current = [];
+        }
         continue;
       }
-
-      const x = this.timeToX(p.time, w, now, windowMs);
-      const y = this.midiToY(p.midi, h);
-
-      if (!drawing) {
-        ctx.moveTo(x, y);
-        drawing = true;
-      } else {
-        ctx.lineTo(x, y);
-      }
+      current.push({
+        x: this.timeToX(p.time, w, now, windowMs),
+        y: this.midiToY(p.midi, h),
+      });
     }
+    if (current.length > 0) segments.push(current);
 
-    ctx.stroke();
+    // Draw each segment as a smooth quadratic spline through midpoints
+    for (const pts of segments) {
+      if (pts.length < 2) {
+        // Single point — just draw a dot
+        if (pts.length === 1) {
+          ctx.beginPath();
+          ctx.arc(pts[0].x, pts[0].y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        continue;
+      }
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+
+      for (let i = 0; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      // Final segment to the last point
+      const last = pts[pts.length - 1];
+      ctx.lineTo(last.x, last.y);
+      ctx.stroke();
+    }
     ctx.shadowBlur = 0;
 
     // Draw current pitch dot at the rightmost point
-    const last = history[history.length - 1];
-    if (last && !isNaN(last.midi)) {
-      const x = this.timeToX(last.time, w, now, windowMs);
-      const y = this.midiToY(last.midi, h);
+    const lastPt = history[history.length - 1];
+    if (lastPt && !isNaN(lastPt.midi)) {
+      const x = this.timeToX(lastPt.time, w, now, windowMs);
+      const y = this.midiToY(lastPt.midi, h);
       ctx.fillStyle = "#fff";
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
