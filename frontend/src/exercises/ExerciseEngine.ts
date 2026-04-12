@@ -1,5 +1,5 @@
 import { centsOffPitch, midiToFrequency, midiToNoteName, isInScale } from "../audio/noteUtils";
-import { ToneGenerator } from "../audio/ToneGenerator";
+import { ToneGenerator, type ToneType } from "../audio/ToneGenerator";
 
 export type ExercisePhase = "idle" | "listening" | "hold" | "success" | "done";
 
@@ -38,10 +38,21 @@ export class ExerciseEngine {
   private listener: ExerciseListener | null = null;
   private toleranceCents: number;
   private holdMs: number;
+  private toneType: ToneType = "sine";
+  private toneVolume = 0.12;
 
-  constructor(toleranceCents = 30, holdMs = 3000) {
+  constructor(toleranceCents = 30, holdMs = 2000) {
     this.toleranceCents = toleranceCents;
     this.holdMs = holdMs;
+  }
+
+  setToneType(type: ToneType): void {
+    this.toneType = type;
+  }
+
+  setVolume(volume: number): void {
+    this.toneVolume = volume;
+    this.tone.setVolume(volume);
   }
 
   onStateChange(listener: ExerciseListener): void {
@@ -104,7 +115,7 @@ export class ExerciseEngine {
     this.lastTickTime = performance.now();
 
     // Play reference tone
-    this.tone.play(midiToFrequency(note.midi), 0.12);
+    this.tone.play(midiToFrequency(note.midi), this.toneVolume, this.toneType);
 
     this.emit();
   }

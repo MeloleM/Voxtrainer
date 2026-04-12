@@ -4,6 +4,7 @@ import { PitchDetector } from "../audio/PitchDetector";
 import { PitchVisualizer } from "../viz/PitchVisualizer";
 import { ExerciseEngine, type ExerciseState } from "../exercises/ExerciseEngine";
 import { ExercisePanel } from "./ExercisePanel";
+import type { ToneType } from "../audio/ToneGenerator";
 import {
   frequencyToMidi,
   midiToNoteName,
@@ -44,6 +45,8 @@ export function PitchDisplay() {
   // Exercise state
   const [exerciseActive, setExerciseActive] = useState(false);
   const [exerciseState, setExerciseState] = useState<ExerciseState | null>(null);
+  const [toneType, setToneType] = useState<ToneType>("sine");
+  const [toneVolume, setToneVolume] = useState(0.12);
 
   const tick = useCallback(() => {
     const analyser = analyserRef.current;
@@ -132,14 +135,26 @@ export function PitchDisplay() {
   const startExercise = useCallback(() => {
     if (!running) return;
 
-    const ex = new ExerciseEngine(30, 3000);
+    const ex = new ExerciseEngine(30, 2000);
+    ex.setToneType(toneType);
+    ex.setVolume(toneVolume);
     ex.onStateChange((state) => setExerciseState({ ...state }));
     exerciseRef.current = ex;
     setExerciseActive(true);
 
     const scaleIntervals = scaleName === "Chromatic" ? null : SCALES[scaleName];
     ex.startNoteMatching(5, rangeLow, rangeHigh, scaleIntervals, rootNote);
-  }, [running, rangeLow, rangeHigh, scaleName, rootNote]);
+  }, [running, rangeLow, rangeHigh, scaleName, rootNote, toneType, toneVolume]);
+
+  const handleToneType = useCallback((type: ToneType) => {
+    setToneType(type);
+    exerciseRef.current?.setToneType(type);
+  }, []);
+
+  const handleVolume = useCallback((vol: number) => {
+    setToneVolume(vol);
+    exerciseRef.current?.setVolume(vol);
+  }, []);
 
   const stopExercise = useCallback(() => {
     exerciseRef.current?.stop();
@@ -302,8 +317,12 @@ export function PitchDisplay() {
         <ExercisePanel
           exerciseActive={exerciseActive}
           state={exerciseState}
+          toneType={toneType}
+          toneVolume={toneVolume}
           onStart={startExercise}
           onStop={stopExercise}
+          onToneTypeChange={handleToneType}
+          onVolumeChange={handleVolume}
         />
       )}
 

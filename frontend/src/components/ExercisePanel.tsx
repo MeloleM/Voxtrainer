@@ -1,13 +1,27 @@
 import type { ExerciseState } from "../exercises/ExerciseEngine";
+import type { ToneType } from "../audio/ToneGenerator";
 
 interface ExercisePanelProps {
   exerciseActive: boolean;
   state: ExerciseState | null;
+  toneType: ToneType;
+  toneVolume: number;
   onStart: () => void;
   onStop: () => void;
+  onToneTypeChange: (type: ToneType) => void;
+  onVolumeChange: (volume: number) => void;
 }
 
-export function ExercisePanel({ exerciseActive, state, onStart, onStop }: ExercisePanelProps) {
+export function ExercisePanel({
+  exerciseActive,
+  state,
+  toneType,
+  toneVolume,
+  onStart,
+  onStop,
+  onToneTypeChange,
+  onVolumeChange,
+}: ExercisePanelProps) {
   const phase = state?.phase ?? "idle";
   const progress = state?.holdProgress ?? 0;
   const noteIndex = state?.noteIndex ?? 0;
@@ -26,6 +40,36 @@ export function ExercisePanel({ exerciseActive, state, onStart, onStop }: Exerci
             Stop Exercise
           </button>
         )}
+
+        <div className="toolbar-separator" />
+
+        <button
+          className={`toggle-pill${toneType === "sine" ? " active" : ""}`}
+          onClick={() => onToneTypeChange("sine")}
+        >
+          Sine
+        </button>
+        <button
+          className={`toggle-pill${toneType === "piano" ? " active" : ""}`}
+          onClick={() => onToneTypeChange("piano")}
+        >
+          Piano
+        </button>
+
+        <div className="toolbar-separator" />
+
+        <div className="volume-control">
+          <span className="volume-label">Vol</span>
+          <input
+            type="range"
+            min="0"
+            max="0.4"
+            step="0.01"
+            value={toneVolume}
+            onChange={(e) => onVolumeChange(Number(e.target.value))}
+            className="volume-slider"
+          />
+        </div>
 
         {exerciseActive && totalNotes > 0 && phase !== "done" && (
           <span className="exercise-progress-text">
