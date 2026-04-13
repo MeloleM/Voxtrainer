@@ -23,5 +23,5 @@
     "complete": "Avg {avg} cents off. {verdict}",
     "tip": "Major thirds are everywhere in music — 'Kumbaya', the first two notes of 'When the Saints'. Training your ear to hear them makes everything easier."
   },
-  "requires": ["s2-01"]
+  "requires": []
 }

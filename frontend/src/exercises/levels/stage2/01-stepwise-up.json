@@ -23,5 +23,5 @@
     "complete": "{noteCount} notes, avg {avg} cents off. Transitions: {transitionScore}.",
     "tip": "Clean transitions train your vocal muscles to jump precisely. Sliding is easier but builds bad habits."
   },
-  "requires": ["s1-05"]
+  "requires": []
 }

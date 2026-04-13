@@ -23,5 +23,5 @@
     "complete": "Guided: {guidedAvg}c off. Solo: {mutedAvg}c off. Drift: {drift}c. {verdict}",
     "tip": "This is the anti-karaoke exercise. Real singing means holding pitch without a crutch. Even small improvements here transfer to everything."
   },
-  "requires": ["s2-04"]
+  "requires": []
 }

@@ -23,5 +23,5 @@
     "complete": "Avg {avg} cents off. {verdict}",
     "tip": "Fifths have a natural resonance — when you nail one, you can almost feel it vibrate. That's the harmonic series at work."
   },
-  "requires": ["s2-02"]
+  "requires": []
 }

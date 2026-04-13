@@ -379,6 +379,16 @@
   color: var(--text-secondary);
 }
 
+.exercise-message.phase-intro {
+  color: var(--text-primary);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.exercise-message.phase-holding {
+  color: var(--color-warning);
+}
+
 .exercise-message.phase-hold {
   color: var(--color-warning);
 }

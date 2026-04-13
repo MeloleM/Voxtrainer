@@ -59,14 +59,14 @@ export function PitchDisplay() {
     const viz = vizRef.current;
     if (!analyser || !detector || !viz) return;
 
-    const result = detector.detect(analyser);
-    if (result) {
-      viz.pushPitch(result.frequency);
-      lastFreqRef.current = result.frequency;
-      const midi = frequencyToMidi(result.frequency);
+    const { pitch, amplitude } = detector.detectFull(analyser);
+    if (pitch) {
+      viz.pushPitch(pitch.frequency);
+      lastFreqRef.current = pitch.frequency;
+      const midi = frequencyToMidi(pitch.frequency);
       setCurrentNote(midiToNoteName(midi));
-      setCurrentHz(`${result.frequency.toFixed(1)} Hz`);
-      setCurrentCents(Math.round(centsOffPitch(result.frequency)));
+      setCurrentHz(`${pitch.frequency.toFixed(1)} Hz`);
+      setCurrentCents(Math.round(centsOffPitch(pitch.frequency)));
     } else {
       viz.pushSilence();
       lastFreqRef.current = null;
@@ -75,8 +75,8 @@ export function PitchDisplay() {
       setCurrentCents(0);
     }
 
-    // Feed exercise engine
-    exerciseRef.current?.tick(lastFreqRef.current);
+    // Feed exercise engine (frequency + amplitude)
+    exerciseRef.current?.tick(lastFreqRef.current, amplitude);
 
     // Update visualizer target from exercise
     const target = exerciseRef.current?.getTargetNote() ?? null;

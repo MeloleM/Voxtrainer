@@ -22,5 +22,5 @@
     "complete": "You echoed {noteCount} phrases. Avg {avg} cents off. {verdict}",
     "tip": "Your inner ear is a muscle. The more you echo, the better you'll hold pitch without needing a reference."
   },
-  "requires": ["s2-01"]
+  "requires": []
 }

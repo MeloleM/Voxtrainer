@@ -20,5 +20,5 @@
     "complete": "You held {reps} steady breaths. Breath support is how singers sustain notes without strain.",
     "tip": "Think of your breath as a column of air. You're balancing it, not pushing it."
   },
-  "requires": ["s1-01"]
+  "requires": []
 }

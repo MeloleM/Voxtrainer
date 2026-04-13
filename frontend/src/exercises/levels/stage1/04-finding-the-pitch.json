@@ -22,5 +22,5 @@
     "complete": "You connected your voice to the target pitch. That sliding-and-locking skill is how pitch matching actually works.",
     "tip": "Most people who think they're tone-deaf actually have a motor mapping issue, not a hearing one. This exercise builds that map."
   },
-  "requires": ["s1-01"]
+  "requires": []
 }

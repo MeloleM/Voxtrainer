@@ -24,5 +24,5 @@
     "complete": "{noteCount} notes, avg {avg} cents off. {verdict}",
     "tip": "Accuracy improves fastest when you slow down. Give your brain time to hear the target before you sing."
   },
-  "requires": ["s1-03"]
+  "requires": []
 }

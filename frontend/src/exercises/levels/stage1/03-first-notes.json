@@ -24,5 +24,5 @@
     "complete": "You matched {noteCount} notes with an average of {avg} cents off. {verdict}",
     "tip": "Don't worry about volume — focus on matching the pitch. Quiet and accurate beats loud and wild."
   },
-  "requires": ["s1-01"]
+  "requires": []
 }
