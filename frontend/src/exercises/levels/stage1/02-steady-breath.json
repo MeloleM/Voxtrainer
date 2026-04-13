@@ -8,13 +8,13 @@
   "skill": "Breath Support",
   "config": {
     "type": "breath",
-    "minVolume": 0.15,
+    "minVolume": 0.02,
     "targetMs": 5000,
     "reps": 3
   },
   "feedback": {
-    "intro": "Breathe in slowly through your nose, then exhale on a gentle 'sss' or hum. Try to keep the volume steady.",
-    "waiting": "Take a deep breath in...",
+    "intro": "We'll calibrate your mic first (stay quiet for 2 seconds). Then hum or sing 'aah' at a steady volume. The bar fills when you sustain — keep it even.",
+    "waiting": "Take a deep breath in, then hum steadily...",
     "holding": "Steady... keep the airflow even.",
     "success": ["Great control!", "Smooth and steady.", "That's the feel."],
     "complete": "You held {reps} steady breaths. Breath support is how singers sustain notes without strain.",

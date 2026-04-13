@@ -65,7 +65,7 @@ export function ExercisePanel({
           />
         </div>
 
-        {totalNotes > 0 && phase !== "complete" && phase !== "intro" && (
+        {totalNotes > 0 && phase !== "complete" && phase !== "intro" && phase !== "reference" && (
           <span className="exercise-progress-text">
             {Math.min(noteIndex + 1, totalNotes)} / {totalNotes}
           </span>

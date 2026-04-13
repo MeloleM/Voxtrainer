@@ -385,6 +385,10 @@
   line-height: 1.5;
 }
 
+.exercise-message.phase-reference {
+  color: var(--color-info);
+}
+
 .exercise-message.phase-holding {
   color: var(--color-warning);
 }
