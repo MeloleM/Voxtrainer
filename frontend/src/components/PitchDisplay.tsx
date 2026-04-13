@@ -45,7 +45,7 @@ export function PitchDisplay() {
   // Exercise state
   const [exerciseActive, setExerciseActive] = useState(false);
   const [exerciseState, setExerciseState] = useState<ExerciseState | null>(null);
-  const [toneType, setToneType] = useState<ToneType>("sine");
+  const [toneType, setToneType] = useState<ToneType>("piano");
   const [toneVolume, setToneVolume] = useState(0.12);
 
   const tick = useCallback(() => {

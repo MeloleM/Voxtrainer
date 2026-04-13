@@ -75,8 +75,9 @@ export class PitchVisualizer {
   }
 
   setRange(lowMidi: number, highMidi: number): void {
-    this.midiLow = Math.max(VOCAL_RANGE.low, lowMidi);
-    this.midiHigh = Math.min(VOCAL_RANGE.high, highMidi);
+    // Pad by 1 semitone so edge notes are visible when highlighted
+    this.midiLow = Math.max(VOCAL_RANGE.low, lowMidi - 1);
+    this.midiHigh = Math.min(VOCAL_RANGE.high, highMidi + 1);
   }
 
   pushPitch(frequency: number): void {
