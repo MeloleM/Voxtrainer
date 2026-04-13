@@ -1,49 +1,49 @@
-import { centsOffPitch, midiToFrequency, midiToNoteName, isInScale } from "../audio/noteUtils";
+import { centsOffPitch, midiToFrequency, isInScale } from "../audio/noteUtils";
 import { ToneGenerator, type ToneType } from "../audio/ToneGenerator";
+import type {
+  Level,
+  NoteMatchingConfig,
+  SequenceConfig,
+  NoteSelection,
+  RunPhase,
+  RunState,
+  NoteResult,
+} from "./types";
 
-export type ExercisePhase = "idle" | "listening" | "hold" | "success" | "done";
-
-export interface ExerciseNote {
-  midi: number;
-  toleranceCents: number;
-  holdMs: number;          // how long user must hold within tolerance
-}
-
-export interface ExerciseState {
-  phase: ExercisePhase;
-  currentNote: ExerciseNote | null;
-  noteIndex: number;
-  totalNotes: number;
-  holdProgress: number;    // 0-1, how far through the hold
-  score: number[];         // cents deviation per completed note
-  message: string;
-}
-
-export type ExerciseListener = (state: ExerciseState) => void;
+export type StateListener = (state: RunState) => void;
 
 /**
- * Single-note matching exercise.
- * Generates a sequence of notes within the user's range/scale,
- * plays a reference tone, and tracks whether the user matches.
+ * Runs any exercise level. Consumes a Level JSON and manages
+ * the tick-by-tick state machine.
+ *
+ * Currently implements: note-matching, sequence.
+ * Other types (glissando, breath, diagnostic, call-response, mute-track)
+ * will be added as we build their UI.
  */
 export class ExerciseEngine {
   private tone = new ToneGenerator();
-  private notes: ExerciseNote[] = [];
+  private targetNotes: number[] = [];     // MIDI notes to hit, in order
   private noteIndex = 0;
-  private phase: ExercisePhase = "idle";
-  private holdAccum = 0;        // accumulated hold time in ms
+  private phase: RunPhase = "idle";
+  private holdAccum = 0;
   private lastTickTime = 0;
   private centsHistory: number[] = [];
-  private score: number[] = [];
-  private listener: ExerciseListener | null = null;
-  private toleranceCents: number;
-  private holdMs: number;
-  private toneType: ToneType = "sine";
+  private results: NoteResult[] = [];
+  private listener: StateListener | null = null;
+  private level: Level | null = null;
+  private successIndex = 0;
+
+  // Configurable per-level
+  private toleranceCents = 30;
+  private holdMs = 2000;
+  private playReference = true;
+
+  // User settings
+  private toneType: ToneType = "piano";
   private toneVolume = 0.12;
 
-  constructor(toleranceCents = 30, holdMs = 2000) {
-    this.toleranceCents = toleranceCents;
-    this.holdMs = holdMs;
+  onStateChange(listener: StateListener): void {
+    this.listener = listener;
   }
 
   setToneType(type: ToneType): void {
@@ -55,86 +55,180 @@ export class ExerciseEngine {
     this.tone.setVolume(volume);
   }
 
-  onStateChange(listener: ExerciseListener): void {
-    this.listener = listener;
-  }
-
   /**
-   * Generate a note-matching exercise.
-   * Picks random in-scale notes within the given MIDI range.
+   * Start running a level.
+   * rangeLow/rangeHigh and scale info are the user's current settings.
    */
-  startNoteMatching(
-    count: number,
+  startLevel(
+    level: Level,
     rangeLow: number,
     rangeHigh: number,
     scaleIntervals: number[] | null,
     rootNote: number
   ): void {
-    this.notes = [];
-    // Build pool of valid notes
+    this.level = level;
+    this.results = [];
+    this.noteIndex = 0;
+    this.successIndex = 0;
+
+    const config = level.config;
+
+    if (config.type === "note-matching" || config.type === "sequence") {
+      const cfg = config as NoteMatchingConfig | SequenceConfig;
+      this.toleranceCents = cfg.toleranceCents;
+      this.holdMs = cfg.holdMs;
+      this.playReference = cfg.playReference;
+      this.targetNotes = this.resolveNotes(
+        cfg.noteSelection,
+        rangeLow,
+        rangeHigh,
+        scaleIntervals,
+        rootNote
+      );
+    } else {
+      // Stub for other types — just show intro
+      this.targetNotes = [];
+    }
+
+    if (this.targetNotes.length === 0 && config.type !== "diagnostic" && config.type !== "breath") {
+      // No valid notes — can't run
+      this.phase = "complete";
+      this.emit();
+      return;
+    }
+
+    // Show intro briefly, then start first note
+    this.phase = "intro";
+    this.emit();
+
+    setTimeout(() => {
+      this.advanceToNote();
+    }, 2000);
+  }
+
+  /**
+   * Resolve a NoteSelection into concrete MIDI note numbers.
+   */
+  private resolveNotes(
+    selection: NoteSelection,
+    rangeLow: number,
+    rangeHigh: number,
+    scaleIntervals: number[] | null,
+    rootNote: number
+  ): number[] {
+    switch (selection.mode) {
+      case "random": {
+        const pool = this.buildPool(rangeLow, rangeHigh, scaleIntervals, rootNote);
+        if (pool.length === 0) return [];
+        const notes: number[] = [];
+        let lastPick = -1;
+        for (let i = 0; i < selection.count; i++) {
+          let pick: number;
+          do {
+            pick = pool[Math.floor(Math.random() * pool.length)];
+          } while (pick === lastPick && pool.length > 1);
+          lastPick = pick;
+          notes.push(pick);
+        }
+        return notes;
+      }
+
+      case "fixed":
+        return [...selection.notes];
+
+      case "pattern": {
+        // Scale degree pattern — resolve relative to rootNote within range
+        const pool = this.buildPool(rangeLow, rangeHigh, scaleIntervals, rootNote);
+        if (pool.length === 0) return [];
+        // Find a good starting note near the middle of the range
+        const midMidi = Math.round((rangeLow + rangeHigh) / 2);
+        // Find the pool note closest to mid
+        const startIdx = pool.reduce((best, n, i) =>
+          Math.abs(n - midMidi) < Math.abs(pool[best] - midMidi) ? i : best, 0);
+        const notes: number[] = [];
+        const repeats = selection.repeats ?? 1;
+        for (let r = 0; r < repeats; r++) {
+          for (const degree of selection.degrees) {
+            const idx = Math.min(startIdx + degree, pool.length - 1);
+            notes.push(pool[idx]);
+          }
+        }
+        return notes;
+      }
+
+      case "interval": {
+        // Semitone offsets from a randomly chosen root in the pool
+        const pool = this.buildPool(rangeLow, rangeHigh, scaleIntervals, rootNote);
+        if (pool.length === 0) return [];
+        const maxInterval = Math.max(...selection.intervals);
+        // Pick a root that leaves room for the largest interval
+        const validRoots = pool.filter((n) => n + maxInterval <= rangeHigh);
+        if (validRoots.length === 0) return [];
+        const root = validRoots[Math.floor(Math.random() * validRoots.length)];
+        const notes: number[] = [];
+        const repeats = selection.repeats ?? 1;
+        for (let r = 0; r < repeats; r++) {
+          for (const interval of selection.intervals) {
+            notes.push(root + interval);
+          }
+        }
+        return notes;
+      }
+
+      case "range-test":
+        return []; // Diagnostic handles its own flow
+    }
+  }
+
+  private buildPool(
+    rangeLow: number,
+    rangeHigh: number,
+    scaleIntervals: number[] | null,
+    rootNote: number
+  ): number[] {
     const pool: number[] = [];
     for (let midi = rangeLow; midi <= rangeHigh; midi++) {
       if (!scaleIntervals || isInScale(midi, rootNote, scaleIntervals)) {
         pool.push(midi);
       }
     }
-    if (pool.length === 0) return;
-
-    // Pick `count` notes, avoiding consecutive repeats
-    let lastPick = -1;
-    for (let i = 0; i < count; i++) {
-      let pick: number;
-      do {
-        pick = pool[Math.floor(Math.random() * pool.length)];
-      } while (pick === lastPick && pool.length > 1);
-      lastPick = pick;
-      this.notes.push({
-        midi: pick,
-        toleranceCents: this.toleranceCents,
-        holdMs: this.holdMs,
-      });
-    }
-
-    this.noteIndex = 0;
-    this.score = [];
-    this.startCurrentNote();
+    return pool;
   }
 
-  private startCurrentNote(): void {
-    if (this.noteIndex >= this.notes.length) {
-      this.phase = "done";
+  private advanceToNote(): void {
+    if (this.noteIndex >= this.targetNotes.length) {
+      this.phase = "complete";
       this.tone.stop();
       this.emit();
       return;
     }
 
-    const note = this.notes[this.noteIndex];
+    const midi = this.targetNotes[this.noteIndex];
     this.phase = "listening";
     this.holdAccum = 0;
     this.centsHistory = [];
     this.lastTickTime = performance.now();
 
-    // Play reference tone
-    this.tone.play(midiToFrequency(note.midi), this.toneVolume, this.toneType);
+    if (this.playReference) {
+      this.tone.play(midiToFrequency(midi), this.toneVolume, this.toneType);
+    }
 
     this.emit();
   }
 
   /**
    * Called every animation frame with the current detected pitch.
-   * frequency = null means silence.
    */
   tick(frequency: number | null): void {
-    if (this.phase !== "listening" && this.phase !== "hold") return;
+    if (this.phase !== "listening" && this.phase !== "holding") return;
 
-    const note = this.notes[this.noteIndex];
+    const midi = this.targetNotes[this.noteIndex];
     const now = performance.now();
     const dt = now - this.lastTickTime;
     this.lastTickTime = now;
 
     if (frequency === null) {
-      // Silence — reset hold but stay in listening
-      if (this.phase === "hold") {
+      if (this.phase === "holding") {
         this.phase = "listening";
         this.holdAccum = 0;
         this.emit();
@@ -142,36 +236,41 @@ export class ExerciseEngine {
       return;
     }
 
-    const cents = centsOffPitch(frequency, midiToFrequency(note.midi));
+    const cents = centsOffPitch(frequency, midiToFrequency(midi));
 
-    if (Math.abs(cents) <= note.toleranceCents) {
-      // Within tolerance
+    if (Math.abs(cents) <= this.toleranceCents) {
       this.centsHistory.push(cents);
       this.holdAccum += dt;
 
       if (this.phase === "listening") {
-        this.phase = "hold";
+        this.phase = "holding";
       }
 
-      if (this.holdAccum >= note.holdMs) {
-        // Success — compute average deviation
-        const avgCents = this.centsHistory.reduce((a, b) => a + Math.abs(b), 0) / this.centsHistory.length;
-        this.score.push(avgCents);
+      if (this.holdAccum >= this.holdMs) {
+        // Note completed
+        const avgCents =
+          this.centsHistory.reduce((a, b) => a + Math.abs(b), 0) /
+          this.centsHistory.length;
+        this.results.push({
+          targetMidi: midi,
+          avgCentsOff: avgCents,
+          held: true,
+        });
+
         this.phase = "success";
         this.tone.stop();
+        this.successIndex++;
         this.emit();
 
-        // Auto-advance after 800ms
         setTimeout(() => {
           this.noteIndex++;
-          this.startCurrentNote();
+          this.advanceToNote();
         }, 800);
         return;
       }
     } else {
-      // Outside tolerance — reset hold progress
-      if (this.phase === "hold") {
-        this.holdAccum = Math.max(0, this.holdAccum - dt * 2); // drain faster than build
+      if (this.phase === "holding") {
+        this.holdAccum = Math.max(0, this.holdAccum - dt * 2);
         if (this.holdAccum === 0) {
           this.phase = "listening";
         }
@@ -181,50 +280,92 @@ export class ExerciseEngine {
     this.emit();
   }
 
-  /** Get the current target note for the visualizer. */
   getTargetNote(): { midi: number; toleranceCents: number } | null {
-    if (this.phase === "idle" || this.phase === "done") return null;
-    const note = this.notes[this.noteIndex];
-    if (!note) return null;
-    return { midi: note.midi, toleranceCents: note.toleranceCents };
+    if (
+      this.phase === "idle" ||
+      this.phase === "complete" ||
+      this.phase === "intro"
+    )
+      return null;
+    const midi = this.targetNotes[this.noteIndex];
+    if (midi === undefined) return null;
+    return { midi, toleranceCents: this.toleranceCents };
   }
 
-  getState(): ExerciseState {
-    const note = this.notes[this.noteIndex] ?? null;
+  getState(): RunState {
+    const fb = this.level?.feedback;
     let message = "";
+
     switch (this.phase) {
       case "idle":
-        message = "Select an exercise to begin";
+        message = "";
+        break;
+      case "intro":
+        message = fb?.intro ?? "";
         break;
       case "listening":
-        message = note ? `Sing ${midiToNoteName(note.midi)}` : "";
+        message = fb?.waiting ?? "Sing the note...";
         break;
-      case "hold":
-        message = "Hold it...";
+      case "holding":
+        message = fb?.holding ?? "Hold it...";
         break;
-      case "success":
-        message = "Nice!";
-        break;
-      case "done": {
-        if (this.score.length === 0) {
-          message = "Done!";
+      case "success": {
+        const msgs = fb?.success ?? "Nice!";
+        if (Array.isArray(msgs)) {
+          message = msgs[(this.successIndex - 1) % msgs.length];
         } else {
-          const avg = this.score.reduce((a, b) => a + b, 0) / this.score.length;
-          message = `Done! Avg: ${avg.toFixed(0)} cents off`;
+          message = msgs;
         }
         break;
       }
+      case "complete":
+        message = this.buildCompleteMessage();
+        break;
     }
 
     return {
       phase: this.phase,
-      currentNote: note,
+      level: this.level,
       noteIndex: this.noteIndex,
-      totalNotes: this.notes.length,
-      holdProgress: note ? Math.min(1, this.holdAccum / note.holdMs) : 0,
-      score: [...this.score],
+      totalNotes: this.targetNotes.length,
+      holdProgress:
+        this.holdMs > 0 ? Math.min(1, this.holdAccum / this.holdMs) : 0,
+      results: [...this.results],
       message,
+      successIndex: this.successIndex,
     };
+  }
+
+  private buildCompleteMessage(): string {
+    const fb = this.level?.feedback;
+    if (!fb) return "Done!";
+
+    let template = fb.complete;
+    const noteCount = this.results.length;
+    const avg =
+      noteCount > 0
+        ? this.results.reduce((a, r) => a + r.avgCentsOff, 0) / noteCount
+        : 0;
+
+    // Build verdict based on performance
+    let verdict = "";
+    if (avg <= 5) verdict = "Incredible precision.";
+    else if (avg <= 10) verdict = "Excellent accuracy!";
+    else if (avg <= 15) verdict = "Really solid work.";
+    else if (avg <= 25) verdict = "Good progress — keep at it.";
+    else verdict = "You're building the foundation. Every session gets easier.";
+
+    template = template
+      .replace("{noteCount}", String(noteCount))
+      .replace("{avg}", avg.toFixed(0))
+      .replace("{verdict}", verdict);
+
+    return template;
+  }
+
+  /** Get the tip for the current level (shown after completion). */
+  getTip(): string | null {
+    return this.level?.feedback?.tip ?? null;
   }
 
   stop(): void {

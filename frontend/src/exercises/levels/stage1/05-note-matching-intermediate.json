@@ -1,0 +1,28 @@
+{
+  "id": "s1-05",
+  "name": "Tighter Aim",
+  "stage": 1,
+  "order": 5,
+  "difficulty": "intermediate",
+  "description": "Same drill, smaller target. 7 notes, ±15 cents tolerance. You've got the basics — time to sharpen up.",
+  "skill": "Pitch Accuracy",
+  "config": {
+    "type": "note-matching",
+    "noteSelection": { "mode": "random", "count": 7 },
+    "toleranceCents": 15,
+    "holdMs": 2000,
+    "playReference": true,
+    "referenceLeadMs": 0
+  },
+  "feedback": {
+    "intro": "The target zone is smaller now. Listen carefully, breathe, then place your voice right in the center.",
+    "waiting": "Listen... then match it.",
+    "holding": "Right in the zone — steady...",
+    "success": ["Precise!", "Clean.", "Dialed in.", "Smooth.", "That's control."],
+    "tooFlat": "Nudge it up just a hair.",
+    "tooSharp": "Ease it down slightly.",
+    "complete": "{noteCount} notes, avg {avg} cents off. {verdict}",
+    "tip": "Accuracy improves fastest when you slow down. Give your brain time to hear the target before you sing."
+  },
+  "requires": ["s1-03"]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "s1-03",
+  "name": "First Notes",
+  "stage": 1,
+  "order": 3,
+  "difficulty": "beginner",
+  "description": "Match 5 notes in your comfortable range. Listen to the reference tone, then sing it back. Take your time.",
+  "skill": "Pitch Matching",
+  "config": {
+    "type": "note-matching",
+    "noteSelection": { "mode": "random", "count": 5 },
+    "toleranceCents": 30,
+    "holdMs": 2000,
+    "playReference": true,
+    "referenceLeadMs": 0
+  },
+  "feedback": {
+    "intro": "You'll hear a tone. Try to match it with your voice — use 'aah' or 'ooh'. The green zone shows your target.",
+    "waiting": "Listen to the tone, then sing it back...",
+    "holding": "You're on it — hold steady!",
+    "success": ["Yes!", "Nailed it.", "That's the one!", "Beautiful.", "Right on target."],
+    "tooFlat": "A little higher...",
+    "tooSharp": "Bring it down slightly...",
+    "complete": "You matched {noteCount} notes with an average of {avg} cents off. {verdict}",
+    "tip": "Don't worry about volume — focus on matching the pitch. Quiet and accurate beats loud and wild."
+  },
+  "requires": ["s1-01"]
+}

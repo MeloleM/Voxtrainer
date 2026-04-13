@@ -1,0 +1,24 @@
+{
+  "id": "s1-02",
+  "name": "Steady Breath",
+  "stage": 1,
+  "order": 2,
+  "difficulty": "beginner",
+  "description": "Breath control is the foundation of singing. Let's build a steady, even exhale.",
+  "skill": "Breath Support",
+  "config": {
+    "type": "breath",
+    "minVolume": 0.15,
+    "targetMs": 5000,
+    "reps": 3
+  },
+  "feedback": {
+    "intro": "Breathe in slowly through your nose, then exhale on a gentle 'sss' or hum. Try to keep the volume steady.",
+    "waiting": "Take a deep breath in...",
+    "holding": "Steady... keep the airflow even.",
+    "success": ["Great control!", "Smooth and steady.", "That's the feel."],
+    "complete": "You held {reps} steady breaths. Breath support is how singers sustain notes without strain.",
+    "tip": "Think of your breath as a column of air. You're balancing it, not pushing it."
+  },
+  "requires": ["s1-01"]
+}

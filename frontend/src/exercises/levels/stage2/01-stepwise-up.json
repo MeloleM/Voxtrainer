@@ -1,0 +1,27 @@
+{
+  "id": "s2-01",
+  "name": "Walking Up",
+  "stage": 2,
+  "order": 1,
+  "difficulty": "beginner",
+  "description": "Sing up a scale — Do Re Mi Re Do. Focus on clean steps, not slides between notes.",
+  "skill": "Stepwise Motion",
+  "config": {
+    "type": "sequence",
+    "noteSelection": { "mode": "pattern", "degrees": [0, 1, 2, 1, 0], "repeats": 2 },
+    "toleranceCents": 25,
+    "holdMs": 1500,
+    "tempoBpm": null,
+    "playReference": true,
+    "scoreTransitions": true
+  },
+  "feedback": {
+    "intro": "I'll play a 5-note pattern: up two steps and back down. Match each note with a clean jump — try not to slide.",
+    "waiting": "Listen to the pattern, then sing each note...",
+    "holding": "Clean! Hold it...",
+    "success": ["Step!", "Clean jump.", "Good transition.", "Smooth."],
+    "complete": "{noteCount} notes, avg {avg} cents off. Transitions: {transitionScore}.",
+    "tip": "Clean transitions train your vocal muscles to jump precisely. Sliding is easier but builds bad habits."
+  },
+  "requires": ["s1-05"]
+}

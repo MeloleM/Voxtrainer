@@ -1,0 +1,27 @@
+{
+  "id": "s2-02",
+  "name": "Jumping Thirds",
+  "stage": 2,
+  "order": 2,
+  "difficulty": "intermediate",
+  "description": "Major thirds — the building block of melodies. Sing the root, jump up a third, come back.",
+  "skill": "Interval Training",
+  "config": {
+    "type": "sequence",
+    "noteSelection": { "mode": "interval", "intervals": [0, 4, 0, 3, 0], "repeats": 2 },
+    "toleranceCents": 20,
+    "holdMs": 1500,
+    "tempoBpm": null,
+    "playReference": true,
+    "scoreTransitions": true
+  },
+  "feedback": {
+    "intro": "You'll hear a root note, then a jump up by a major third (4 semitones), then a minor third. Sing each one cleanly.",
+    "waiting": "Listen, then match...",
+    "holding": "Solid — hold...",
+    "success": ["That interval!", "Clean jump.", "You hear it.", "Nice leap."],
+    "complete": "Avg {avg} cents off. {verdict}",
+    "tip": "Major thirds are everywhere in music — 'Kumbaya', the first two notes of 'When the Saints'. Training your ear to hear them makes everything easier."
+  },
+  "requires": ["s2-01"]
+}

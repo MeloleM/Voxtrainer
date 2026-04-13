@@ -1,0 +1,26 @@
+{
+  "id": "s2-04",
+  "name": "Echo Game",
+  "stage": 2,
+  "order": 4,
+  "difficulty": "intermediate",
+  "description": "I play a short phrase, you sing it back from memory. This trains your inner ear — the key to singing without a guide.",
+  "skill": "Auditory Memory",
+  "config": {
+    "type": "call-response",
+    "noteSelection": { "mode": "pattern", "degrees": [0, 2, 4, 2], "repeats": 3 },
+    "toleranceCents": 25,
+    "holdMs": 1500,
+    "guidePlays": 1,
+    "guideOverlap": false
+  },
+  "feedback": {
+    "intro": "Listen to the short phrase, then sing it back. The guide plays once, then it's your turn.",
+    "waiting": "Your turn — sing what you heard...",
+    "holding": "That's it — hold...",
+    "success": ["You remembered!", "Good ear.", "Echo perfect.", "Right from memory."],
+    "complete": "You echoed {noteCount} phrases. Avg {avg} cents off. {verdict}",
+    "tip": "Your inner ear is a muscle. The more you echo, the better you'll hold pitch without needing a reference."
+  },
+  "requires": ["s2-01"]
+}

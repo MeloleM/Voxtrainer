@@ -1,0 +1,26 @@
+{
+  "id": "s1-04",
+  "name": "Finding the Pitch",
+  "stage": 1,
+  "order": 4,
+  "difficulty": "beginner",
+  "description": "Can't quite land on a note? That's normal. Slide your voice up or down until you hit the target zone.",
+  "skill": "Pitch Searching",
+  "config": {
+    "type": "glissando",
+    "startNote": "user-low",
+    "targetNote": "user-mid",
+    "toleranceCents": 30,
+    "holdMs": 1500,
+    "direction": "up"
+  },
+  "feedback": {
+    "intro": "Start low and slide your voice upward — like a siren. When you cross through the green zone, try to lock in.",
+    "waiting": "Start with a low hum and slide up...",
+    "holding": "You found it — hold there!",
+    "success": ["Locked in!", "You found it!", "There it is!"],
+    "complete": "You connected your voice to the target pitch. That sliding-and-locking skill is how pitch matching actually works.",
+    "tip": "Most people who think they're tone-deaf actually have a motor mapping issue, not a hearing one. This exercise builds that map."
+  },
+  "requires": ["s1-01"]
+}

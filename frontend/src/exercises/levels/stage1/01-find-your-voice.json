@@ -1,0 +1,22 @@
+{
+  "id": "s1-01",
+  "name": "Find Your Voice",
+  "stage": 1,
+  "order": 1,
+  "difficulty": "beginner",
+  "description": "Let's find your comfortable range. Just hum or sing naturally — there are no wrong answers here.",
+  "skill": "Range Discovery",
+  "config": {
+    "type": "diagnostic",
+    "test": "range"
+  },
+  "feedback": {
+    "intro": "Take a breath and sing the lowest note you can comfortably hold. Then we'll find your high end.",
+    "waiting": "Whenever you're ready...",
+    "holding": "Good, keep going...",
+    "success": ["Got it!", "Nice one!", "Perfect."],
+    "complete": "Your comfortable range is {rangeLow} to {rangeHigh}. That's a solid starting point.",
+    "tip": "Your range will naturally expand as you train. No need to push — comfort is the goal right now."
+  },
+  "requires": []
+}

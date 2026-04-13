@@ -1,0 +1,27 @@
+{
+  "id": "s2-03",
+  "name": "Perfect Fifths",
+  "stage": 2,
+  "order": 3,
+  "difficulty": "intermediate",
+  "description": "The perfect fifth — the strongest interval in music. Root, up a fifth, back down.",
+  "skill": "Interval Training",
+  "config": {
+    "type": "sequence",
+    "noteSelection": { "mode": "interval", "intervals": [0, 7, 0], "repeats": 3 },
+    "toleranceCents": 20,
+    "holdMs": 1500,
+    "tempoBpm": null,
+    "playReference": true,
+    "scoreTransitions": true
+  },
+  "feedback": {
+    "intro": "A perfect fifth is 7 semitones — think the first two notes of 'Twinkle Twinkle'. Jump clean.",
+    "waiting": "Root note first, then jump up...",
+    "holding": "Hold that fifth...",
+    "success": ["Rock solid.", "That resonance!", "Perfect.", "Strong jump."],
+    "complete": "Avg {avg} cents off. {verdict}",
+    "tip": "Fifths have a natural resonance — when you nail one, you can almost feel it vibrate. That's the harmonic series at work."
+  },
+  "requires": ["s2-02"]
+}

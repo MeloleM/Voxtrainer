@@ -1,0 +1,27 @@
+{
+  "id": "s2-05",
+  "name": "Training Wheels Off",
+  "stage": 2,
+  "order": 5,
+  "difficulty": "advanced",
+  "description": "Sing along with the guide for a few notes, then it goes silent. Can you hold the pitch on your own?",
+  "skill": "Pitch Independence",
+  "config": {
+    "type": "mute-track",
+    "noteSelection": { "mode": "pattern", "degrees": [0, 1, 2, 3, 4, 3, 2, 1], "repeats": 2 },
+    "toleranceCents": 20,
+    "holdMs": 1500,
+    "guidedCount": 4,
+    "mutedCount": 4,
+    "showDrift": true
+  },
+  "feedback": {
+    "intro": "Sing along with the guide for the first 4 notes. Then it goes quiet — keep going on your own. We'll show you how far you drifted.",
+    "waiting": "Sing along with the guide...",
+    "holding": "On your own now — trust your ear...",
+    "success": ["Held it!", "No drift!", "Independent.", "Strong memory."],
+    "complete": "Guided: {guidedAvg}c off. Solo: {mutedAvg}c off. Drift: {drift}c. {verdict}",
+    "tip": "This is the anti-karaoke exercise. Real singing means holding pitch without a crutch. Even small improvements here transfer to everything."
+  },
+  "requires": ["s2-04"]
+}

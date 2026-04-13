@@ -2,9 +2,11 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { AudioEngine } from "../audio/AudioEngine";
 import { PitchDetector } from "../audio/PitchDetector";
 import { PitchVisualizer } from "../viz/PitchVisualizer";
-import { ExerciseEngine, type ExerciseState } from "../exercises/ExerciseEngine";
+import { ExerciseEngine } from "../exercises/ExerciseEngine";
 import { ExercisePanel } from "./ExercisePanel";
+import { LevelBrowser } from "./LevelBrowser";
 import type { ToneType } from "../audio/ToneGenerator";
+import type { Level, RunState } from "../exercises/types";
 import {
   frequencyToMidi,
   midiToNoteName,
@@ -34,19 +36,22 @@ export function PitchDisplay() {
   const [showNoteLabels, setShowNoteLabels] = useState(false);
   const [showHz, setShowHz] = useState(false);
 
-  // Range (MIDI note numbers) — must span at least 12 semitones (1 octave)
-  const [rangeLow, setRangeLow] = useState(36); // C2
-  const [rangeHigh, setRangeHigh] = useState(72); // C5
+  // Range
+  const [rangeLow, setRangeLow] = useState(36);
+  const [rangeHigh, setRangeHigh] = useState(72);
 
   // Scale
   const [scaleName, setScaleName] = useState("Chromatic");
-  const [rootNote, setRootNote] = useState(0); // 0 = C
+  const [rootNote, setRootNote] = useState(0);
 
-  // Exercise state
-  const [exerciseActive, setExerciseActive] = useState(false);
-  const [exerciseState, setExerciseState] = useState<ExerciseState | null>(null);
+  // Exercise / Level state
+  const [showLevelBrowser, setShowLevelBrowser] = useState(false);
+  const [exerciseState, setExerciseState] = useState<RunState | null>(null);
+  const [exerciseTip, setExerciseTip] = useState<string | null>(null);
   const [toneType, setToneType] = useState<ToneType>("piano");
   const [toneVolume, setToneVolume] = useState(0.12);
+  // TODO: persist to IndexedDB later
+  const [completedLevels, setCompletedLevels] = useState<Set<string>>(new Set());
 
   const tick = useCallback(() => {
     const analyser = analyserRef.current;
@@ -119,8 +124,9 @@ export function PitchDisplay() {
     exerciseRef.current?.stop();
     exerciseRef.current?.dispose();
     exerciseRef.current = null;
-    setExerciseActive(false);
     setExerciseState(null);
+    setExerciseTip(null);
+    setShowLevelBrowser(false);
     engineRef.current?.stop();
     engineRef.current = null;
     analyserRef.current = null;
@@ -132,19 +138,29 @@ export function PitchDisplay() {
     setCurrentCents(0);
   }, []);
 
-  const startExercise = useCallback(() => {
-    if (!running) return;
+  const startLevel = useCallback((level: Level) => {
+    // Clean up any existing exercise
+    exerciseRef.current?.stop();
+    exerciseRef.current?.dispose();
 
-    const ex = new ExerciseEngine(30, 2000);
+    const ex = new ExerciseEngine();
     ex.setToneType(toneType);
     ex.setVolume(toneVolume);
-    ex.onStateChange((state) => setExerciseState({ ...state }));
+    ex.onStateChange((state) => {
+      setExerciseState({ ...state });
+      // Mark level complete when done
+      if (state.phase === "complete" && level.id) {
+        setCompletedLevels((prev) => new Set(prev).add(level.id));
+      }
+    });
     exerciseRef.current = ex;
-    setExerciseActive(true);
+    setExerciseTip(null);
+    setShowLevelBrowser(false);
 
     const scaleIntervals = scaleName === "Chromatic" ? null : SCALES[scaleName];
-    ex.startNoteMatching(5, rangeLow, rangeHigh, scaleIntervals, rootNote);
-  }, [running, rangeLow, rangeHigh, scaleName, rootNote, toneType, toneVolume]);
+    ex.startLevel(level, rangeLow, rangeHigh, scaleIntervals, rootNote);
+    setExerciseTip(level.feedback.tip ?? null);
+  }, [rangeLow, rangeHigh, scaleName, rootNote, toneType, toneVolume]);
 
   const handleToneType = useCallback((type: ToneType) => {
     setToneType(type);
@@ -160,9 +176,8 @@ export function PitchDisplay() {
     exerciseRef.current?.stop();
     exerciseRef.current?.dispose();
     exerciseRef.current = null;
-    setExerciseActive(false);
     setExerciseState(null);
-    // Clear target from visualizer
+    setExerciseTip(null);
     vizRef.current?.setOptions({ targetNote: null });
   }, []);
 
@@ -203,6 +218,8 @@ export function PitchDisplay() {
         ? "near-pitch"
         : "off-pitch";
 
+  const exerciseRunning = exerciseState && exerciseState.phase !== "idle";
+
   return (
     <div className="pitch-display">
       {/* ── Toolbar ── */}
@@ -214,6 +231,15 @@ export function PitchDisplay() {
           >
             {running ? "Stop" : "Start Mic"}
           </button>
+
+          {running && !exerciseRunning && (
+            <button
+              className="btn-primary"
+              onClick={() => setShowLevelBrowser(!showLevelBrowser)}
+            >
+              Exercises
+            </button>
+          )}
         </div>
 
         <div className="toolbar-separator" />
@@ -312,14 +338,22 @@ export function PitchDisplay() {
         </div>
       </div>
 
-      {/* ── Exercise Panel ── */}
-      {running && (
+      {/* ── Level Browser ── */}
+      {showLevelBrowser && (
+        <LevelBrowser
+          completedIds={completedLevels}
+          onSelectLevel={startLevel}
+          onClose={() => setShowLevelBrowser(false)}
+        />
+      )}
+
+      {/* ── Exercise Panel (visible during exercise) ── */}
+      {exerciseRunning && (
         <ExercisePanel
-          exerciseActive={exerciseActive}
           state={exerciseState}
+          tip={exerciseTip}
           toneType={toneType}
           toneVolume={toneVolume}
-          onStart={startExercise}
           onStop={stopExercise}
           onToneTypeChange={handleToneType}
           onVolumeChange={handleVolume}

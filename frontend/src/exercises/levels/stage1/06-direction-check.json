@@ -1,0 +1,28 @@
+{
+  "id": "s1-06",
+  "name": "Direction Check",
+  "stage": 1,
+  "order": 6,
+  "difficulty": "beginner",
+  "description": "This one watches whether you tend to sing flat or sharp, then gives you a quick trick to correct it.",
+  "skill": "Directional Compensation",
+  "config": {
+    "type": "note-matching",
+    "noteSelection": { "mode": "random", "count": 8 },
+    "toleranceCents": 30,
+    "holdMs": 2000,
+    "playReference": true,
+    "referenceLeadMs": 0
+  },
+  "feedback": {
+    "intro": "Sing each note naturally. After a few, I'll tell you if you tend flat or sharp and give you a correction trick.",
+    "waiting": "Sing the note...",
+    "holding": "Holding...",
+    "success": ["Got it.", "Good.", "Noted.", "Nice."],
+    "tooFlat": "You're trending flat — try singing 'Gee' to brighten the placement.",
+    "tooSharp": "You're trending sharp — try 'Guh' to relax into the note.",
+    "complete": "Tendency: {tendency}. {tendencyAdvice}",
+    "tip": "Everyone has a natural drift direction. Knowing yours is the first step to correcting it."
+  },
+  "requires": ["s1-03"]
+}
